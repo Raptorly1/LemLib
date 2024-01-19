@@ -372,14 +372,14 @@ lemlib::Pose lemlib::Chassis::getTarget(MovementType mType, const MoveToPoseTarg
  * @param async whether the function should be run asynchronously. true by
  * default
  */
-void lemlib::Chassis::moveToPose(MoveToPoseTarget targetPose, int timeout, MoveToPoseOptions params, bool async) {
+void lemlib::Chassis::moveToPose(float x, float y, float theta, int timeout, MoveToPoseOptions params, bool async) {
     // take the mutex
     this->requestMotionStart();
     // were all motions cancelled?
     if (!this->motionRunning) return;
     // if the function is async, run it in a new task
     if (async) {
-        pros::Task task([&]() { moveToPose(targetPose, timeout, params, false); });
+        pros::Task task([&]() { moveToPose(x, y, theta, timeout, params, false); });
         this->endMotion();
         pros::delay(10); // delay to give the task time to start
         return;
@@ -393,8 +393,8 @@ void lemlib::Chassis::moveToPose(MoveToPoseTarget targetPose, int timeout, MoveT
     angularLargeExit.reset();
     angularSmallExit.reset();
 
-    Pose target = getTarget(getMovementType(targetPose), targetPose);
-
+    // calculate target pose in standard form
+    Pose target(x, y, M_PI_2 - degToRad(theta));
     if (!params.forwards) target.theta = fmod(target.theta + M_PI, 2 * M_PI); // backwards movement
 
     // use global chasePower is chasePower is 0
@@ -471,20 +471,14 @@ void lemlib::Chassis::moveToPose(MoveToPoseTarget targetPose, int timeout, MoveT
 
         // apply restrictions on angular speed
         angularOut = std::clamp(angularOut, -params.maxSpeed, params.maxSpeed);
-        angularOut = slew(angularOut, prevAngularOut, angularSettings.slew);
 
         // apply restrictions on lateral speed
         lateralOut = std::clamp(lateralOut, -params.maxSpeed, params.maxSpeed);
 
         // constrain lateral output by max accel
-        // but not for decelerating, since that would interfere with settling
-        if (params.forwards && lateralOut > prevLateralOut)
-            lateralOut = slew(lateralOut, prevLateralOut, lateralSettings.slew);
-        if (!params.forwards && lateralOut < prevLateralOut)
-            lateralOut = slew(lateralOut, prevLateralOut, lateralSettings.slew);
+        if (!close) lateralOut = slew(lateralOut, prevLateralOut, lateralSettings.slew);
 
-        // constrain lateral output by the max speed it can travel at without
-        // slipping
+        // constrain lateral output by the max speed it can travel at without slipping
         const float radius = 1 / fabs(getCurvature(pose, carrot));
         const float maxSlipSpeed(sqrt(params.chasePower * radius * 9.8));
         lateralOut = std::clamp(lateralOut, -maxSlipSpeed, maxSlipSpeed);
@@ -528,6 +522,12 @@ void lemlib::Chassis::moveToPose(MoveToPoseTarget targetPose, int timeout, MoveT
     // set distTraveled to -1 to indicate that the function has finished
     distTravelled = -1;
     this->endMotion();
+}
+
+void lemlib::Chassis::RelativeMoveToPose(MoveToPoseTarget targetPose, int timeout, MoveToPoseOptions params,
+                                         bool async) {
+    Pose target = getTarget(getMovementType(targetPose), targetPose);
+    chassis.moveToPose(target.x, target.y, target.theta, timeout, params, async);
 }
 
 /**
