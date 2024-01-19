@@ -291,7 +291,7 @@ class Chassis {
          * @param async whether the function should be run asynchronously. true by
          * default
          */
-        void moveToPose(float x, float y, float theta, int timeout, MoveToPoseParams params = {}, bool async = true);
+        void moveToPose(float x, float y, float theta, int timeout, MoveToPoseOptions params = {}, bool async = true);
         /**
          * @brief Move the chassis towards the target pose
          *
@@ -303,7 +303,7 @@ class Chassis {
          * @param async whether the function should be run asynchronously. true by
          * default
          */
-        RelativeMoveToPose(MoveToPoseTarget targetPose, int timeout, MoveToPoseOptions params = {}, bool async = true);
+        void RelativeMoveToPose(MoveToPoseTarget targetPose, int timeout, MoveToPoseOptions params = {}, bool async = true);
         /**
          * @brief Move the chassis towards a target point
          *
