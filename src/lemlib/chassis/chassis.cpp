@@ -527,7 +527,7 @@ void lemlib::Chassis::moveToPose(float x, float y, float theta, int timeout, Mov
 void lemlib::Chassis::RelativeMoveToPose(MoveToPoseTarget targetPose, int timeout, MoveToPoseOptions params,
                                          bool async) {
     Pose target = getTarget(getMovementType(targetPose), targetPose);
-    chassis.moveToPose(target.x, target.y, target.theta, timeout, params, async);
+    Chassis.moveToPose(target.x, target.y, target.theta, timeout, params, async);
 }
 
 /**
