@@ -275,10 +275,43 @@ class Chassis {
          * @param x x location
          * @param y y location
          * @param timeout longest time the robot can spend moving
+         * @param async whether the function should be run asynchronously. true by default
+         */
+        void turnToPoint(float x, float y, int timeout, bool async = true);
+        /**
+         * @brief Turn the chassis so it is facing the target point
+         *
+         * The PID logging id is "angularPID"
+         *
+         * @param x x location
+         * @param y y location
+         * @param timeout longest time the robot can spend moving
          * @param params struct to simulate named parameters
          * @param async whether the function should be run asynchronously. true by default
          */
-        void turnTo(float x, float y, int timeout, TurnToParams params, bool async = true);
+        void turnToPoint(float x, float y, int timeout, TurnToParams params, bool async = true);
+        /**
+         * @brief Turn the chassis so it is facing the target heading
+         *
+         * The PID logging id is "angularPID"
+         *
+         * @param theta heading location
+         * @param timeout longest time the robot can spend moving
+         * @param params struct to simulate named parameters
+         * @param async whether the function should be run asynchronously. true by default
+         */
+        void turnToHeading(float theta, int timeout, bool async = true);
+        /**
+         * @brief Turn the chassis so it is facing the target heading
+         *
+         * The PID logging id is "angularPID"
+         *
+         * @param theta heading location
+         * @param timeout longest time the robot can spend moving
+         * @param params struct to simulate named parameters
+         * @param async whether the function should be run asynchronously. true by default
+         */
+        void turnToHeading(float theta, int timeout, TurnToParams params, bool async = true);
         /**
          * @brief Move the chassis towards the target pose
          *
@@ -359,6 +392,11 @@ class Chassis {
          * @return whether a motion is currently running
          */
         bool isInMotion() const;
+        /**
+         * @brief Resets the x and y position of the robot
+         * without interfering with the heading.
+         */
+        void resetLocalPosition();
     protected:
         /**
          * @brief Indicates that this motion is queued and blocks current task until this motion reaches front of queue
