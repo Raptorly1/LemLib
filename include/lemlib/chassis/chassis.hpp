@@ -26,7 +26,7 @@ namespace lemlib {
  */
 struct OdomSensors {
         /**
-        
+
          * The sensors are stored in a struct so that they can be easily passed to the chassis class
          * The variables are pointers so that they can be set to nullptr if they are not used
          * Otherwise the chassis class would have to have a constructor for each possible combination of sensors
@@ -124,12 +124,6 @@ float defaultDriveCurve(float input, float scale);
  *
  */
 
-
-
-
-
-
- 
 class Chassis {
     public:
         /**
