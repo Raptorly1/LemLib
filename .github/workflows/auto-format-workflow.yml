@@ -19,35 +19,22 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
-      id: check-file-changes
-      run: |
-        git fetch origin
-        changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
-        if [ -z "$changed_files" ]; then
-          echo "all_files=true" >> $GITHUB_ENV
-        else
-          echo "all_files=false" >> $GITHUB_ENV
-          echo "changed_files=$changed_files" >> $GITHUB_ENV
-        fi
-
-    - name: Format code
+    - name: Run clang-format
       uses: DoozyX/clang-format-lint-action@v0.18
       with:
         clang-format-version: 18
-        files: |
-          ${{ env.changed_files }}
-        style: file
+        extensions: 'cpp,hpp,h'
+        src-paths: 'src/lemlib,include/lemlib'
 
     - name: Check for changes
       id: check-format-changes
       run: |
-         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "changes=true" >> $GITHUB_ENV
+         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
     - name: Commit or amend changes
       run: |
-        if [[ "${{ env.changes }}" == "true" ]]; then
+        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
