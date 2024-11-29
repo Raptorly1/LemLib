@@ -20,50 +20,11 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Use clang-format from DoozyX
-      run: |
-        curl -L https://doozyx.com/clang-format -o /usr/local/bin/clang-format
-        chmod +x /usr/local/bin/clang-format
-
-    - name: Check installed clang-format versions
-      run: |
-        for version in {3..18}; do
-          if command -v clang-format-$version &> /dev/null; then
-            echo "clang-format-$version is installed"
-          fi
-        done
-
-    - name: Output clang-format version
-      run: clang-format --version
-
-    # Check all files in src/lemlib and include/lemlib for changes
-    - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
-      id: check-file-changes
-      run: |
-        git fetch origin
-        changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
-        if [ -z "$changed_files" ]; then
-          echo "::set-output name=all_files::true"
-        else
-          echo "::set-output name=all_files::false"
-          echo "::set-output name=changed_files::$changed_files"
-        fi
-
-    # Format changed files. If no files are changed, then check the whole directory
-    - name: Format code
-      run: |
-        if [ "${{ steps.check-file-changes.outputs.all_files }}" == "true" ]; then
-          echo "No .cpp, .hpp, or .h files were changed in the last commit in src/lemlib and include/lemlib. Formatting all .cpp, .hpp, and .h files in these directories."
-          find ./src/lemlib ./include/lemlib -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | while read filename; do
-            clang-format -i $filename
-          done
-        else
-          echo "${{ steps.check-file-changes.outputs.changed_files }}" | while read filename; do
-            if [[ $filename == *.cpp || $filename == *.hpp || $filename == *.h ]]; then
-              clang-format -i $filename
-            fi
-          done
-        fi
+    - name: Run clang-format
+      uses: DoozyX/clang-format-lint-action@v0.18
+      with:
+        extensions: 'cpp,hpp,h'
+        source: 'src/lemlib include/lemlib'
 
     # Check for changes after formatting
     - name: Check for changes
