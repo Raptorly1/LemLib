@@ -34,6 +34,10 @@ jobs:
         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
+    - name: Output format changes
+      if: steps.check-format-changes.outputs.changes == 'true'
+      run: git diff -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h'
+
     - name: Commit changes
       run: |
         if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
