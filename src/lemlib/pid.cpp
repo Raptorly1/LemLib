@@ -9,10 +9,10 @@
  *
  */
 
-#include <iostream>
-#include <math.h>
 #include "lemlib/pid.hpp"
 #include "lemlib/util.hpp"
+#include <iostream>
+#include <math.h>
 
 // define static variables
 std::string lemlib::FAPID::input = "FAPID";
@@ -22,7 +22,8 @@ pros::Mutex lemlib::FAPID::logMutex = pros::Mutex();
 /**
  * @brief Construct a new FAPID
  *
- * @param kF feedfoward gain, multiplied by target and added to output. Set 0 if disabled
+ * @param kF feedfoward gain, multiplied by target and added to output. Set 0 if
+ * disabled
  * @param kA acceleration gain, limits the change in output. Set 0 if disabled
  * @param kP proportional gain, multiplied by error and added to output
  * @param kI integral gain, multiplied by total error and added to output
@@ -41,7 +42,8 @@ lemlib::FAPID::FAPID(float kF, float kA, float kP, float kI, float kD, std::stri
 /**
  * @brief Set gains
  *
- * @param kF feedfoward gain, multiplied by target and added to output. Set 0 if disabled
+ * @param kF feedfoward gain, multiplied by target and added to output. Set 0 if
+ * disabled
  * @param kA acceleration gain, limits the change in output. Set 0 if disabled
  * @param kP proportional gain, multiplied by error and added to output
  * @param kI integral gain, multiplied by total error and added to output
@@ -77,14 +79,14 @@ void lemlib::FAPID::setExit(float largeError, float smallError, int largeTime, i
  *
  * @param target the target value
  * @param position the current value
- * @param log whether to check the most recent terminal input for user input. Default is false because logging multiple
- * PIDs could slow down the program.
+ * @param log whether to check the most recent terminal input for user input.
+ * Default is false because logging multiple PIDs could slow down the program.
  * @return float - output
  */
 float lemlib::FAPID::update(float target, float position, bool log) {
     // check most recent input if logging is enabled
-    // this does not run by default because the mutexes could slow down the program
-    // calculate output
+    // this does not run by default because the mutexes could slow down the
+    // program calculate output
     float error = target - position;
     float deltaError = error - prevError;
     float output = kF * target + kP * error + kI * totalError + kD * deltaError;
@@ -108,7 +110,8 @@ void lemlib::FAPID::reset() {
 /**
  * @brief Check if the FAPID has settled
  *
- * If the exit conditions have not been set, this function will always return false
+ * If the exit conditions have not been set, this function will always return
+ * false
  *
  * @return true - the FAPID has settled
  * @return false - the FAPID has not settled
