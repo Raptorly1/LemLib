@@ -1,10 +1,6 @@
 name: format-code
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+on: [push]
 
 permissions:
   contents: write
@@ -19,8 +15,11 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Output clang-format version
-      run: clang-format-18 --version
+    - name: Get current date and week number
+      id: date
+      run: |
+          echo "::set-output name=date::$(date +'%Y-%m-%d')"
+          echo "::set-output name=week::$(($(date +'%U') / 2))"
 
     - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
       id: check-file-changes
@@ -37,7 +36,6 @@ jobs:
     - name: Format code
       uses: DoozyX/clang-format-lint-action@v0.18
       with:
-        clang-format-version: 18
         files: |
           src/lemlib/**/*.cpp
           src/lemlib/**/*.hpp
@@ -49,7 +47,7 @@ jobs:
     - name: Check for changes
       id: check-format-changes
       run: |
-        git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
+         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
     - name: Commit changes
@@ -58,6 +56,6 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
-          git commit --amend --no-edit
-          git push --force
+          git commit -m "Automated code formatting"
+          git push
         fi
