@@ -20,35 +20,19 @@ jobs:
       with:
         fetch-depth: 0
 
-    # Check all files in src/lemlib and include/lemlib for changes
-    - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
-      id: check-file-changes
-      run: |
-        git fetch origin
-        changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
-        if [ -z "$changed_files" ]; then
-          echo "::set-output name=all_files::true"
-        else
-          echo "::set-output name=all_files::false"
-          echo "::set-output name=changed_files::$changed_files"
-        fi
-
-    # Format code using DoozyX/clang-format-lint-action
-    - name: Format code
+    - name: Run clang-format
       uses: DoozyX/clang-format-lint-action@v0.18
       with:
         clang-format-version: 18
-        files: |
-          ${{ steps.check-file-changes.outputs.changed_files }}
+        extensions: 'cpp,hpp,h'
+        src-paths: 'src/lemlib,include/lemlib'
 
-    # Check for changes after formatting
     - name: Check for changes
       id: check-format-changes
       run: |
          git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
-    # If a PR is merged, amend the last commit with the formatted code. If manually triggered, commit the changes
     - name: Commit or amend changes
       run: |
         if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
