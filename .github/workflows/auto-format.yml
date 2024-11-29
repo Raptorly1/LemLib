@@ -15,12 +15,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Get current date and week number
-      id: date
-      run: |
-          echo "::set-output name=date::$(date +'%Y-%m-%d')"
-          echo "::set-output name=week::$(($(date +'%U') / 2))"
-
     - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
       id: check-file-changes
       run: |
