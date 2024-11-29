@@ -37,14 +37,9 @@ jobs:
     - name: Format code
       uses: DoozyX/clang-format-lint-action@v0.18
       with:
-        files: |
-          src/lemlib/*.cpp
-          src/lemlib/*.hpp
-          src/lemlib/*.h
-          include/lemlib/*.cpp
-          include/lemlib/*.hpp
-          include/lemlib/*.h
         clang-format-version: 18
+        files: |
+          ${{ steps.check-file-changes.outputs.changed_files }}
 
     # Check for changes after formatting
     - name: Check for changes
