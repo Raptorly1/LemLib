@@ -45,7 +45,6 @@ jobs:
 
     # If a PR is merged, amend the last commit with the formatted code. If manually triggered, commit the changes
     - name: Commit or amend changes
-      if: steps.set-changes-output.outputs.changes == 'true'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
