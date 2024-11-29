@@ -49,12 +49,12 @@ jobs:
 
     # Step to output the format changes if there are any
     - name: Output format changes
-      if: steps.check-format-changes.outputs.changes == 'true'
+      if: steps.check-format-changes.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
       run: git diff -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h'
 
     # Step to commit the changes
     - name: Commit changes
-      if: steps.check-format-changes.outputs.changes == 'true'
+      if: steps.check-format-changes.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
       run: |
         # Configure git user for the commit
         git config --local user.email "action@github.com"
