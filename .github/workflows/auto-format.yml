@@ -28,7 +28,12 @@ jobs:
       id: check-and-format
       run: |
         git fetch origin
-        changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          base_ref="HEAD^"
+        else
+          base_ref="${{ github.event.before }}"
+        fi
+        changed_files=$(git diff --name-only $base_ref..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
         if [ -z "$changed_files" ]; then
           echo "::set-output name=all_files::true"
         else
