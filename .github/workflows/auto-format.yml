@@ -1,13 +1,9 @@
+# automatically format code using clang-format when a pull request is merged or manually triggered
 name: format-code
 
 on:
-  push:
-    branches:
-      - '*'
   pull_request:
     types: [closed]
-    branches:
-      - '*'
   workflow_dispatch:
 
 permissions:
@@ -15,6 +11,7 @@ permissions:
 
 jobs:
   format:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -23,38 +20,30 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Check and format code
-      id: check-and-format
-      run: |
-        git fetch origin
-        changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
-        if [ -z "$changed_files" ]; then
-          echo "::set-output name=all_files::true"
-        else
-          echo "::set-output name=all_files::false"
-          echo "::set-output name=changed_files::$changed_files"
-          clang-format -i $changed_files
-        fi
+    - name: Run clang-format-lint-action
+      uses: DoozyX/clang-format-lint-action@v0.18
+      with:
+        clang-format-version: 18
+        extensions: 'cpp,hpp,h'
+        source: 'src/lemlib include/lemlib'
 
-    - name: Check for format changes
+    # Check for changes after formatting
+    - name: Check for changes
       id: check-format-changes
       run: |
-        git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
+         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
-    - name: Output format changes
-      if: steps.check-format-changes.outputs.changes == 'true'
-      run: git diff -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h'
-
-    - name: Commit changes
-      if: steps.check-format-changes.outputs.changes == 'true'
+    # If a PR is merged, amend the last commit with the formatted code. If manually triggered, commit the changes
+    - name: Commit or amend changes
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          git commit -m "Automated code formatting"
-        else
-          git commit --amend --no-edit
-        fi
-        git push --force
+        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            git commit -m "Automated code formatting"
+          else
+            git commit --amend --no-edit
+          fi
+          git push --force
