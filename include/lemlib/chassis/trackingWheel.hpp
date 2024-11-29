@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include "pros/motors.hpp"
 #include "pros/adi.hpp"
+#include "pros/motors.hpp"
 #include "pros/rotation.hpp"
 
 namespace lemlib {
@@ -42,7 +42,8 @@ class TrackingWheel {
          *
          * @param encoder the optical shaft encoder to use
          * @param wheelDiameter the diameter of the wheel
-         * @param distance distance between the tracking wheel and the center of rotation in inches
+         * @param distance distance between the tracking wheel and the center of
+         * rotation in inches
          * @param gearRatio gear ratio of the tracking wheel, defaults to 1
          */
         TrackingWheel(pros::ADIEncoder* encoder, float wheelDiameter, float distance, float gearRatio = 1);
@@ -51,7 +52,8 @@ class TrackingWheel {
          *
          * @param encoder the v5 rotation sensor to use
          * @param wheelDiameter the diameter of the wheel
-         * @param distance distance between the tracking wheel and the center of rotation in inches
+         * @param distance distance between the tracking wheel and the center of
+         * rotation in inches
          * @param gearRatio gear ratio of the tracking wheel, defaults to 1
          */
         TrackingWheel(pros::Rotation* encoder, float wheelDiameter, float distance, float gearRatio = 1);
