@@ -1,6 +1,10 @@
 name: format-code
 
-on: [push]
+on:
+  push:
+    branches:
+      - main # Adjust based on the branch where you want to run this workflow
+  workflow_dispatch: # Allows manual triggering
 
 permissions:
   contents: write
@@ -15,20 +19,29 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Run clang-format-lint
+    - name: Run clang-format-lint-action
+      id: clang-format
       uses: DoozyX/clang-format-lint-action@v0.18
       with:
-        extensions: '.cpp,.hpp,.h'
+        extensions: |
+          .cpp
+          .hpp
+          .h
         paths: |
           src/lemlib
           include/lemlib
-    - name: Commit changes
+
+    - name: Commit changes if formatted
+      if: ${{ steps.clang-format.outputs.has-changes == 'true' }}
       run: |
-        if [[ -n "$(git status --porcelain)" ]]; then
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          git commit -m "Automated code formatting by clang-format-lint"
-          git push
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          # Create a new commit if manually triggered
+          git commit -m "Automated code formatting"
         else
-          echo "No changes to commit."
+          # Amend the latest commit if automatically triggered
+          git commit --amend --no-edit
+        fi
+        git push --force
