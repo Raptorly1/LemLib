@@ -45,4 +45,3 @@ jobs:
             git commit --amend --no-edit
           fi
           git push --force
-        fi
