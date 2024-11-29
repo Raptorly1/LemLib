@@ -1,3 +1,4 @@
+# automatically format code using clang-format when a pull request is merged or manually triggered
 name: format-code
 
 on:
@@ -19,12 +20,28 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Use clang-format from DoozyX
+      run: |
+        curl -L https://doozyx.com/clang-format -o /usr/local/bin/clang-format
+        chmod +x /usr/local/bin/clang-format
+
+    - name: Check installed clang-format versions
+      run: |
+        for version in {3..18}; do
+          if command -v clang-format-$version &> /dev/null; then
+            echo "clang-format-$version is installed"
+          fi
+        done
+
+    - name: Output clang-format version
+      run: clang-format --version
+
+    # Check all files in src/lemlib and include/lemlib for changes
     - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
       id: check-file-changes
       run: |
         git fetch origin
         changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
-        echo "Changed files: $changed_files"
         if [ -z "$changed_files" ]; then
           echo "::set-output name=all_files::true"
         else
@@ -32,29 +49,40 @@ jobs:
           echo "::set-output name=changed_files::$changed_files"
         fi
 
+    # Format changed files. If no files are changed, then check the whole directory
     - name: Format code
-      if: steps.check-file-changes.outputs.all_files == 'false'
-      uses: DoozyX/clang-format-lint-action@v0.18
-      with:
-        clang-format-version: 18
-        files: |
-          ${{ steps.check-file-changes.outputs.changed_files }}
+      run: |
+        if [ "${{ steps.check-file-changes.outputs.all_files }}" == "true" ]; then
+          echo "No .cpp, .hpp, or .h files were changed in the last commit in src/lemlib and include/lemlib. Formatting all .cpp, .hpp, and .h files in these directories."
+          find ./src/lemlib ./include/lemlib -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | while read filename; do
+            clang-format -i $filename
+          done
+        else
+          echo "${{ steps.check-file-changes.outputs.changed_files }}" | while read filename; do
+            if [[ $filename == *.cpp || $filename == *.hpp || $filename == *.h ]]; then
+              clang-format -i $filename
+            fi
+          done
+        fi
 
+    # Check for changes after formatting
     - name: Check for changes
       id: check-format-changes
       run: |
          git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
+    # If a PR is merged, amend the last commit with the formatted code. If manually triggered, commit the changes
     - name: Commit or amend changes
-      if: steps.check-format-changes.outputs.changes == 'true'
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          git commit -m "Automated code formatting"
-        else
-          git commit --amend --no-edit
+        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            git commit -m "Automated code formatting"
+          else
+            git commit --amend --no-edit
+          fi
+          git push --force
         fi
-        git push --force
