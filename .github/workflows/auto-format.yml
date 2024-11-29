@@ -40,8 +40,6 @@ jobs:
         clang-format-version: 18
         files: |
           ${{ steps.check-file-changes.outputs.changed_files }}
-        if-no-files-found: |
-          find ./src/lemlib ./include/lemlib -name '*.cpp' -or -name '*.hpp' -or -name '*.h'
 
     # Check for changes after formatting
     - name: Check for changes
