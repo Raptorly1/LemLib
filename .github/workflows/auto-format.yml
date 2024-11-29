@@ -1,6 +1,14 @@
 name: format-code
 
-on: [push]
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    types: [closed]
+    branches:
+      - '*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -44,6 +52,10 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
-          git commit -m "Automated code formatting"
-          git push
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            git commit -m "Automated code formatting"
+          else
+            git commit --amend --no-edit
+          fi
+          git push --force
         fi
