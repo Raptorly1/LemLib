@@ -39,7 +39,12 @@ jobs:
       with:
         clang-format-version: 18
         files: |
-          ${{ steps.check-file-changes.outputs.changed_files }}
+          'src/lemlib/*.cpp'
+          'src/lemlib/*.hpp'
+          'src/lemlib/*.h'
+          'include/lemlib/*.cpp'
+          'include/lemlib/*.hpp'
+          'include/lemlib/*.h'
 
     # Check for changes after formatting
     - name: Check for changes
