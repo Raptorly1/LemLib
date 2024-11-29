@@ -20,11 +20,31 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Run clang-format
+    # Check all files in src/lemlib and include/lemlib for changes
+    - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
+      id: check-file-changes
+      run: |
+        git fetch origin
+        changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
+        if [ -z "$changed_files" ]; then
+          echo "::set-output name=all_files::true"
+        else
+          echo "::set-output name=all_files::false"
+          echo "::set-output name=changed_files::$changed_files"
+        fi
+
+    # Format code using DoozyX/clang-format-lint-action
+    - name: Format code
       uses: DoozyX/clang-format-lint-action@v0.18
       with:
-        extensions: 'cpp,hpp,h'
-        source: 'src/lemlib include/lemlib'
+        files: |
+          src/lemlib/*.cpp
+          src/lemlib/*.hpp
+          src/lemlib/*.h
+          include/lemlib/*.cpp
+          include/lemlib/*.hpp
+          include/lemlib/*.h
+        clang-format-version: 18
 
     # Check for changes after formatting
     - name: Check for changes
