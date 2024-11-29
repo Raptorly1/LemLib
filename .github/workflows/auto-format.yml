@@ -31,19 +31,28 @@ jobs:
     - name: Check for changes
       id: check-format-changes
       run: |
-         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
+         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h'
       continue-on-error: true
+
+    - name: Set changes output
+      id: set-changes-output
+      run: |
+        if [ -n "$(git diff -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')" ]; then
+          echo "::set-output name=changes::true"
+        else
+          echo "::set-output name=changes::false"
+        fi
 
     # If a PR is merged, amend the last commit with the formatted code. If manually triggered, commit the changes
     - name: Commit or amend changes
+      if: steps.set-changes-output.outputs.changes == 'true'
       run: |
-        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            git commit -m "Automated code formatting"
-          else
-            git commit --amend --no-edit
-          fi
-          git push --force
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          git commit -m "Automated code formatting"
+        else
+          git commit --amend --no-edit
+        fi
+        git push --force
