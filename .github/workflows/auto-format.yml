@@ -46,6 +46,7 @@ jobs:
       id: check-format-changes
       run: |
         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
+        echo "::set-output name=changes::false"
       continue-on-error: true
 
     - name: Output format changes
@@ -53,15 +54,14 @@ jobs:
       run: git diff -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h'
 
     - name: Commit changes
+      if: steps.check-format-changes.outputs.changes == 'true'
       run: |
-        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            git commit -m "Automated code formatting"
-          else
-            git commit --amend --no-edit
-          fi
-          git push --force
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          git commit -m "Automated code formatting"
+        else
+          git commit --amend --no-edit
         fi
+        git push --force
