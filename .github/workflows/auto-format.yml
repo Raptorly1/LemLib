@@ -34,14 +34,14 @@ jobs:
       continue-on-error: true
 
     - name: Commit or amend changes
+      if: steps.check-format-changes.outputs.changes == 'true'
       run: |
-        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            git commit -m "Automated code formatting"
-          else
-            git commit --amend --no-edit
-          fi
-          git push --force
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          git commit -m "Automated code formatting"
+        else
+          git commit --amend --no-edit
+        fi
+        git push --force
