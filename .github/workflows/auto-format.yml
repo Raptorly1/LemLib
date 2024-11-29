@@ -18,54 +18,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Step to checkout the code from the repository
     - name: Checkout code
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
 
-    # Step to check and format the code using clang-format
     - name: Check and format code
       id: check-and-format
       run: |
         git fetch origin
-        # Get the list of changed files in the specified directories
         changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
         if [ -z "$changed_files" ]; then
           echo "::set-output name=all_files::true"
         else
           echo "::set-output name=all_files::false"
           echo "::set-output name=changed_files::$changed_files"
-          # Format the changed files
           clang-format -i $changed_files
         fi
 
-    # Step to check if there are any format changes
     - name: Check for format changes
       id: check-format-changes
       run: |
         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
-    # Step to output the format changes if there are any
     - name: Output format changes
-      if: steps.check-format-changes.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
+      if: steps.check-format-changes.outputs.changes == 'true'
       run: git diff -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h'
 
-    # Step to commit the changes
     - name: Commit changes
-      if: steps.check-format-changes.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
       run: |
-        # Configure git user for the commit
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        # If the event is workflow_dispatch, create a new commit
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          git commit -m "Automated code formatting"
-        else
-          # Otherwise, amend the last commit
-          git commit --amend --no-edit
+        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            git commit -m "Automated code formatting"
+          else
+            git commit --amend --no-edit
+          fi
+          git push --force
         fi
-        # Force push the changes
-        git push --force
