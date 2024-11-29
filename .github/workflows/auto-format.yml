@@ -16,36 +16,44 @@ permissions:
 jobs:
   format:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
 
     steps:
+    # Checkout the code from the repository
     - name: Checkout code
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
 
+    # Check and format the code using clang-format
     - name: Check and format code
       id: check-and-format
       run: |
         git fetch origin
+        # Get the list of changed files in the specified directories
         changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
         if [ -z "$changed_files" ]; then
           echo "::set-output name=all_files::true"
         else
           echo "::set-output name=all_files::false"
           echo "::set-output name=changed_files::$changed_files"
+          # Format the changed files
           clang-format -i $changed_files
         fi
 
+    # Check if there are any format changes
     - name: Check for format changes
       id: check-format-changes
       run: |
         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
+    # Output the format changes if there are any
     - name: Output format changes
       if: steps.check-format-changes.outputs.changes == 'true'
       run: git diff -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h'
 
+    # Step to commit the changes
     - name: Commit changes
       run: |
         if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
