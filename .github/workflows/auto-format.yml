@@ -3,8 +3,8 @@ name: format-code
 on:
   push:
     branches:
-      - main # Adjust based on the branch where you want to run this workflow
-  workflow_dispatch: # Allows manual triggering
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,29 +19,45 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Run clang-format-lint-action
-      id: clang-format
+    - name: Output clang-format version
+      run: clang-format-18 --version
+
+    - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
+      id: check-file-changes
+      run: |
+        git fetch origin
+        changed_files=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')
+        if [ -z "$changed_files" ]; then
+          echo "::set-output name=all_files::true"
+        else
+          echo "::set-output name=all_files::false"
+          echo "::set-output name=changed_files::$changed_files"
+        fi
+
+    - name: Format code
       uses: DoozyX/clang-format-lint-action@v0.18
       with:
-        extensions: |
-          .cpp
-          .hpp
-          .h
-        paths: |
-          src/lemlib
-          include/lemlib
+        clang-format-version: 18
+        files: |
+          src/lemlib/**/*.cpp
+          src/lemlib/**/*.hpp
+          src/lemlib/**/*.h
+          include/lemlib/**/*.cpp
+          include/lemlib/**/*.hpp
+          include/lemlib/**/*.h
 
-    - name: Commit changes if formatted
-      if: ${{ steps.clang-format.outputs.has-changes == 'true' }}
+    - name: Check for changes
+      id: check-format-changes
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          # Create a new commit if manually triggered
-          git commit -m "Automated code formatting"
-        else
-          # Amend the latest commit if automatically triggered
+        git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
+      continue-on-error: true
+
+    - name: Commit changes
+      run: |
+        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
           git commit --amend --no-edit
+          git push --force
         fi
-        git push --force
