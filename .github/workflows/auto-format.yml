@@ -1,4 +1,4 @@
-# automatically format code using clang-format when a pull request is merged or manually triggered
+# Automatically format code using clang-format when a pull request is merged or manually triggered
 name: format-code
 
 on:
@@ -20,14 +20,16 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install clang-format-18
+    # Set up clang-format using DoozyX/clang-format-lint-action@v0.18
+    - name: Install and setup clang-format-18
       uses: DoozyX/clang-format-lint-action@v0.18
       with:
-        clang-format-version: 18
+        clang-version: 18
 
     - name: Output clang-format version
       run: clang-format --version
 
+    # Check all files in src/lemlib and include/lemlib for changes
     - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
       id: check-file-changes
       run: |
@@ -40,6 +42,7 @@ jobs:
           echo "::set-output name=changed_files::$changed_files"
         fi
 
+    # Format changed files. If no files are changed, then check the whole directory
     - name: Format code
       run: |
         if [ "${{ steps.check-file-changes.outputs.all_files }}" == "true" ]; then
@@ -55,12 +58,14 @@ jobs:
           done
         fi
 
+    # Check for changes after formatting
     - name: Check for changes
       id: check-format-changes
       run: |
-         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
+        git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
+    # If a PR is merged, amend the last commit with the formatted code. If manually triggered, commit the changes
     - name: Commit or amend changes
       run: |
         if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
