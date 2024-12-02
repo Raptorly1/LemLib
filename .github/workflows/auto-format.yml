@@ -26,7 +26,7 @@ jobs:
         clang-format-version: 18
 
     - name: Output clang-format version
-      run: clang-format-18 --version
+      run: clang-format --version
 
     - name: Check for changes in .cpp, .hpp, .h files in src/lemlib and include/lemlib
       id: check-file-changes
@@ -45,12 +45,12 @@ jobs:
         if [ "${{ steps.check-file-changes.outputs.all_files }}" == "true" ]; then
           echo "No .cpp, .hpp, or .h files were changed in the last commit in src/lemlib and include/lemlib. Formatting all .cpp, .hpp, and .h files in these directories."
           find ./src/lemlib ./include/lemlib -name '*.cpp' -or -name '*.hpp' -or -name '*.h' | while read filename; do
-            clang-format-18 -i $filename
+            clang-format -i $filename
           done
         else
           echo "${{ steps.check-file-changes.outputs.changed_files }}" | while read filename; do
             if [[ $filename == *.cpp || $filename == *.hpp || $filename == *.h ]]; then
-              clang-format-18 -i $filename
+              clang-format -i $filename
             fi
           done
         fi
@@ -73,3 +73,4 @@ jobs:
             git commit --amend --no-edit
           fi
           git push --force
+        fi
