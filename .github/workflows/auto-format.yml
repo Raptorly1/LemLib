@@ -23,29 +23,25 @@ jobs:
         uses: DoozyX/clang-format-lint-action@v0.18
         with:
           source: './src/lemlib ./include/lemlib'
-          extensions: 'hpp,cpp'
+          extensions: 'hpp,cpp' 
           clangFormatVersion: 18
 
-      # Print git status and diff output
-      - name: Print git status and diff
+      # Check if there are any changes after formatting
+      - name: Check for formatting changes
+        id: check-format-changes
         run: |
-          echo "Printing git status and diff"
-          git status
-          git diff
+          git diff --exit-code || echo "changes"
 
-      # Commit changes if any
-      - name: Commit changes
-        env:
-          EVENT_NAME: ${{ github.event_name }}
+      # If a PR is merged, amend the last commit with the formatted code. If manually triggered, commit the changes
+      - name: Commit or amend changes
+        if: steps.check-format-changes.outputs.changes == 'changes'
         run: |
-          echo "Checking for changes to commit"
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          if git diff --quiet; then
-            echo "No changes to commit"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            git commit -m "Automated code formatting"
           else
-            echo "Changes detected, committing"
-            git add .
-            git commit -m "Apply clang-format"
-            git push origin HEAD
+            git commit --amend --no-edit
           fi
+          git push --force
