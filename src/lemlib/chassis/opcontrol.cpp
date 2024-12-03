@@ -15,12 +15,11 @@ namespace lemlib {
  * @return The new value to be used.
  */
 float defaultDriveCurve(float input, float scale) {
-  if (scale != 0) {
-    return (powf(2.718, -(scale / 10)) + powf(2.718, (fabs(input) - 127) / 10) *
-                                             (1 - powf(2.718, -(scale / 10)))) *
-           input;
-  }
-  return input;
+    if (scale != 0) {
+        return (powf(2.718, -(scale / 10)) + powf(2.718, (fabs(input) - 127) / 10) * (1 - powf(2.718, -(scale / 10)))) *
+               input;
+    }
+    return input;
 }
 
 /**
@@ -36,8 +35,8 @@ float defaultDriveCurve(float input, float scale) {
  * documentation.
  */
 void Chassis::tank(int left, int right, float curveGain) {
-  drivetrain.leftMotors->move(driveCurve(left, curveGain));
-  drivetrain.rightMotors->move(driveCurve(right, curveGain));
+    drivetrain.leftMotors->move(driveCurve(left, curveGain));
+    drivetrain.rightMotors->move(driveCurve(right, curveGain));
 }
 
 /**
@@ -53,10 +52,10 @@ void Chassis::tank(int left, int right, float curveGain) {
  * documentation.
  */
 void Chassis::arcade(int throttle, int turn, float curveGain) {
-  int leftPower = driveCurve(throttle + turn, curveGain);
-  int rightPower = driveCurve(throttle - turn, curveGain);
-  drivetrain.leftMotors->move(leftPower);
-  drivetrain.rightMotors->move(rightPower);
+    int leftPower = driveCurve(throttle + turn, curveGain);
+    int rightPower = driveCurve(throttle - turn, curveGain);
+    drivetrain.leftMotors->move(leftPower);
+    drivetrain.rightMotors->move(rightPower);
 }
 
 /**
@@ -74,19 +73,19 @@ void Chassis::arcade(int throttle, int turn, float curveGain) {
  * documentation.
  */
 void Chassis::curvature(int throttle, int turn, float curveGain) {
-  // If we're not moving forwards change to arcade drive
-  if (throttle == 0) {
-    arcade(throttle, turn, curveGain);
-    return;
-  }
+    // If we're not moving forwards change to arcade drive
+    if (throttle == 0) {
+        arcade(throttle, turn, curveGain);
+        return;
+    }
 
-  float leftPower = throttle + (std::abs(throttle) * turn) / 127.0;
-  float rightPower = throttle - (std::abs(throttle) * turn) / 127.0;
+    float leftPower = throttle + (std::abs(throttle) * turn) / 127.0;
+    float rightPower = throttle - (std::abs(throttle) * turn) / 127.0;
 
-  leftPower = driveCurve(leftPower, curveGain);
-  rightPower = driveCurve(rightPower, curveGain);
+    leftPower = driveCurve(leftPower, curveGain);
+    rightPower = driveCurve(rightPower, curveGain);
 
-  drivetrain.leftMotors->move(leftPower);
-  drivetrain.rightMotors->move(rightPower);
+    drivetrain.leftMotors->move(leftPower);
+    drivetrain.rightMotors->move(rightPower);
 }
 } // namespace lemlib
