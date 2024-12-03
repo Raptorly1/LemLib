@@ -23,6 +23,7 @@ jobs:
 
       # Check if there are any changes
       - name: Check for changes
+        id: changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -33,9 +34,8 @@ jobs:
             echo "Formatting changes required."
             echo "::set-output name=changes_made::true"
           fi
-        id: changes
 
-      # Amend the last commit if the workflow is triggered by a PR merge
+      # Amend the last commit if the PR is merged
       - name: Amend last commit
         if: github.event.pull_request.merged == true && steps.changes.outputs.changes_made == 'true'
         run: |
@@ -43,7 +43,7 @@ jobs:
           git commit --amend --no-edit
           git push --force
 
-      # Commit changes as a new commit if manually triggered
+      # Commit changes for workflow dispatch
       - name: Commit changes
         if: github.event_name == 'workflow_dispatch' && steps.changes.outputs.changes_made == 'true'
         run: |
