@@ -1,48 +1,38 @@
-name: Code Formatting
+name: format-code
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [closed]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  format-code:
+  format:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+
     steps:
-      # Check out the repository
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      # Run clang-format using DoozyX
-      - name: Run clang-format
-        uses: DoozyX/clang-format-lint-action@v0.18
-        with:
-          source: './src/lemlib ./include/lemlib'
-          extensions: 'hpp,cpp' 
-          clangFormatVersion: 18
+    - name: Format code
+      uses: DoozyX/clang-format-lint-action@v0.18
+      with:
+        source: './src/lemlib ./include/lemlib'
+        extensions: 'hpp,cpp'
+        clangFormatVersion: 18
+        inplace: true
 
-      # Check if there are any changes after formatting
-      - name: Check for formatting changes
-        id: check-format-changes
-        run: |
-          git diff --exit-code || echo "changes"
-
-      # Commit or amend changes
-      - name: Commit or amend changes
-        if: steps.check-format-changes.outputs.changes == 'changes'
-        uses: EndBug/add-and-commit@v9
-        with:
-          author_name: "GitHub Action"
-          author_email: "action@github.com"
-          message: |
-            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-              echo "Automated code formatting"
-            else
-              echo "Amended commit with formatted code"
-            fi
-          push: --force
+    - name: Commit or amend changes
+      uses: EndBug/add-and-commit@v9
+      with:
+        author_name: GitHub Action
+        author_email: action@github.com
+        message: |
+          ${{ github.event_name == 'workflow_dispatch' && 'Automated code formatting' || 'Amended code formatting' }}
+        amend: ${{ github.event_name != 'workflow_dispatch' }}
+        push: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
