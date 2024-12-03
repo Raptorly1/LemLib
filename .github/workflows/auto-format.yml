@@ -13,9 +13,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Echo changes
-      run: echo "changes"
-
     - name: Run clang-format
       id: clang-format
       uses: DoozyX/clang-format-lint-action@v0.18
@@ -24,7 +21,10 @@ jobs:
         extensions: 'hpp,cpp'
         clangFormatVersion: 18
 
+    - name: Echo changes
+      run: echo "changes"
     - name: Commit changes
+    
       if: steps.clang-format.outputs.changes == 'true'
       run: |
         git config --global user.name 'github-actions[bot]'
