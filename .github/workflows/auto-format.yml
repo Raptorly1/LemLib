@@ -26,6 +26,12 @@ jobs:
           extensions: 'hpp,cpp'
           clangFormatVersion: 18
 
+      # Print git status and diff output
+      - name: Print git status and diff
+        run: |
+          git status
+          git diff
+
       # Commit changes if any
       - name: Commit changes
         env:
