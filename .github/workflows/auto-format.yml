@@ -2,18 +2,31 @@ name: Code Formatting
 
 on:
   pull_request:
-    types: [closed] # Trigger when a PR is merged
-  workflow_dispatch: # Allow manual dispatch of the workflow
+    types: [closed]
+  workflow_dispatch:
 
 jobs:
   format-code:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
-      # Check out the repository
+      # Ensure full repository history
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-      # Run clang-format using DoozyX
+      # Debug repository state after checkout
+      - name: Debug Repository State
+        run: |
+          echo "Repository files:"
+          ls -la
+          echo "Git log:"
+          git log -1
+
+      # Run clang-format
       - name: Run clang-format
         uses: DoozyX/clang-format-lint-action@v0.18
         with:
@@ -21,31 +34,43 @@ jobs:
           extensions: 'hpp,cpp'
           clangFormatVersion: 18
 
-      # Check if there are any changes
+      # Debug git diff to verify changes
+      - name: Debug Git Diff
+        run: |
+          echo "Checking for changes..."
+          git status
+          git diff || echo "No changes detected."
+
+      # Check for changes and set environment variable
       - name: Check for changes
         id: changes
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet; then
             echo "No formatting changes required."
-            echo "::set-output name=changes_made::false"
+            echo "changes_made=false" >> $GITHUB_ENV
           else
             echo "Formatting changes required."
-            echo "::set-output name=changes_made::true"
+            echo "changes_made=true" >> $GITHUB_ENV
           fi
 
-      # Amend the last commit if the PR is merged
+      # Debug event payload and environment variable
+      - name: Debug Event Payload
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Pull Request merged: ${{ github.event.pull_request.merged }}"
+          echo "Changes made: ${{ env.changes_made }}"
+
+      # Amend last commit on PR merge
       - name: Amend last commit
-        if: github.event.pull_request.merged == true && steps.changes.outputs.changes_made == 'true'
+        if: github.event.pull_request.merged == true && env.changes_made == 'true'
         run: |
           git add .
           git commit --amend --no-edit
           git push --force
 
-      # Commit changes for workflow dispatch
+      # Commit changes on workflow dispatch
       - name: Commit changes
-        if: github.event_name == 'workflow_dispatch' && steps.changes.outputs.changes_made == 'true'
+        if: github.event_name == 'workflow_dispatch' && env.changes_made == 'true'
         run: |
           git add .
           git commit -m "Apply clang-format changes"
