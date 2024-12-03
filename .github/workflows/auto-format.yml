@@ -32,16 +32,17 @@ jobs:
         run: |
           git diff --exit-code || echo "changes"
 
-      # If a PR is merged, amend the last commit with the formatted code. If manually triggered, commit the changes
+      # Commit or amend changes
       - name: Commit or amend changes
         if: steps.check-format-changes.outputs.changes == 'changes'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            git commit -m "Automated code formatting"
-          else
-            git commit --amend --no-edit
-          fi
-          git push --force
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: "GitHub Action"
+          author_email: "action@github.com"
+          message: |
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+              echo "Automated code formatting"
+            else
+              echo "Amended commit with formatted code"
+            fi
+          push: --force
