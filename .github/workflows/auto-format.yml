@@ -30,12 +30,12 @@ jobs:
     - name: Check for changes
       id: check-format-changes
       run: |
-        git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
+        git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "changes=true" >> $GITHUB_ENV
       continue-on-error: true
 
     - name: Commit or amend changes
       run: |
-        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
+        if [[ "${{ env.changes }}" == "true" ]]; then
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add .
