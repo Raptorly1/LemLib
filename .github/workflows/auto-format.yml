@@ -2,7 +2,7 @@ name: Code Formatting
 
 on:
   pull_request:
-    types: [closed]
+    types: [opened, synchronize]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          ref: main # Ensure the main branch is checked out
+          fetch-depth: 0
 
       # Run clang-format using DoozyX
       - name: Run clang-format
@@ -28,18 +28,15 @@ jobs:
 
       # Commit changes if any
       - name: Commit changes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           if git diff --quiet; then
             echo "No changes to commit"
           else
-            if [ "${{ github.event_name }}" = "pull_request" ]; then
-              git commit --amend --no-edit
-              git push origin +HEAD
-            else
-              git add .
-              git commit -m "Apply clang-format"
-              git push origin HEAD
-            fi
+            git add .
+            git commit -m "Apply clang-format"
+            git push origin HEAD
           fi
