@@ -1,13 +1,8 @@
 name: Code Formatting
 
 on:
-  push:
-    branches:
-      - '*'
   pull_request:
     types: [closed]
-    branches:
-      - '*'
   workflow_dispatch:
 
 permissions:
@@ -20,6 +15,8 @@ jobs:
       # Check out the repository
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          ref: main # Ensure the main branch is checked out
 
       # Run clang-format using DoozyX
       - name: Run clang-format
