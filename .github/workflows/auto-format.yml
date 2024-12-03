@@ -1,4 +1,3 @@
-# automatically format code using clang-format when a pull request is merged or manually triggered
 name: format-code
 
 on:
@@ -24,33 +23,24 @@ jobs:
       uses: DoozyX/clang-format-lint-action@v0.18
       with:
         source: './src/lemlib ./include/lemlib'
-        extensions: 'hpp,cpp,h'
+        extensions: 'hpp,cpp'
         clangFormatVersion: 18
 
     - name: Check for changes
       id: check-format-changes
       run: |
-         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h'
+         git diff --exit-code -- 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h' || echo "::set-output name=changes::true"
       continue-on-error: true
 
-    - name: Set changes output
-      id: set-changes-output
-      run: |
-        if [ -n "$(git diff --name-only 'src/lemlib/*.cpp' 'src/lemlib/*.hpp' 'src/lemlib/*.h' 'include/lemlib/*.cpp' 'include/lemlib/*.hpp' 'include/lemlib/*.h')" ]; then
-          echo "::set-output name=changes::true"
-        else
-          echo "::set-output name=changes::false"
-        fi
-
     - name: Commit or amend changes
-      if: steps.set-changes-output.outputs.changes == 'true'
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          git commit -m "Automated code formatting"
-        else
-          git commit --amend --no-edit
-        fi
-        git push --force
+        if [[ "${{ steps.check-format-changes.outputs.changes }}" == "true" ]]; then
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            git commit -m "Automated code formatting"
+          else
+            git commit --amend --no-edit
+          fi
+          git push --force
