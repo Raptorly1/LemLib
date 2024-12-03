@@ -32,7 +32,6 @@ jobs:
         author_email: action@github.com
         message: |
           ${{ github.event_name == 'workflow_dispatch' && 'Automated code formatting' || 'Amended code formatting' }}
-        amend: ${{ github.event_name != 'workflow_dispatch' }}
         push: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
