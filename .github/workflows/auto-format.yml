@@ -20,11 +20,10 @@ jobs:
         source: './src/lemlib ./include/lemlib'
         extensions: 'hpp,cpp'
         clangFormatVersion: 18
-
-    - name: Echo changes
+    - name: Echo Changes
       run: echo "changes"
+
     - name: Commit changes
-    
       if: steps.clang-format.outputs.changes == 'true'
       run: |
         git config --global user.name 'github-actions[bot]'
