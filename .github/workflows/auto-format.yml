@@ -24,7 +24,8 @@ jobs:
     - name: Check for changes
       id: check_changes
       run: |
-        git diff --exit-code || echo "changes"
+        git diff --exit-code || echo "::set-output name=changes::changes"
+      continue-on-error: true
 
     - name: Commit changes
       if: steps.check_changes.outputs.changes == 'changes'
