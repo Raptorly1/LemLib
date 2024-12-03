@@ -20,11 +20,14 @@ jobs:
         source: './src/lemlib ./include/lemlib'
         extensions: 'hpp,cpp'
         clangFormatVersion: 18
-    - name: Echo Changes
-      run: echo "changes"
+
+    - name: Check for changes
+      id: check_changes
+      run: |
+        git diff --exit-code || echo "changes"
 
     - name: Commit changes
-      if: steps.clang-format.outputs.changes == 'true'
+      if: steps.check_changes.outputs.changes == 'changes'
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
