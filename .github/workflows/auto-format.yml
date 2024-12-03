@@ -4,6 +4,9 @@ on:
   pull_request:
     types: [closed] # Trigger when a PR is merged
   workflow_dispatch: # Allow manual dispatch of the workflow
+  
+permissions: 
+    contents: write
 
 jobs:
   format-code:
