@@ -1,12 +1,17 @@
 name: Code Formatting
 
 on:
+  push:
+    branches:
+      - '*'
   pull_request:
-    types: [closed] # Trigger when a PR is merged
-  workflow_dispatch: # Allow manual dispatch of the workflow
-  
-permissions: 
-    contents: write
+    types: [closed]
+    branches:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   format-code:
