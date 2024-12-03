@@ -2,76 +2,67 @@ name: Code Formatting
 
 on:
   pull_request:
-    types: [closed]
-  workflow_dispatch:
+    types: [closed] # Trigger when a PR is merged
+  workflow_dispatch: # Allow manual dispatch of the workflow
 
 jobs:
   format-code:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
-      # Ensure full repository history
+      # Check out the repository
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
 
-      # Debug repository state after checkout
-      - name: Debug Repository State
-        run: |
-          echo "Repository files:"
-          ls -la
-          echo "Git log:"
-          git log -1
-
-      # Run clang-format
+      # Run clang-format using DoozyX
       - name: Run clang-format
+        id: clang_format
         uses: DoozyX/clang-format-lint-action@v0.18
         with:
           source: './src/lemlib ./include/lemlib'
           extensions: 'hpp,cpp'
           clangFormatVersion: 18
 
-      # Debug git diff to verify changes
-      - name: Debug Git Diff
+      # Save clang-format output
+      - name: Save clang-format output
         run: |
-          echo "Checking for changes..."
-          git status
-          git diff || echo "No changes detected."
+          ./clang-format-lint-action.sh > clang_format_output.txt
+        shell: bash
 
-      # Check for changes and set environment variable
-      - name: Check for changes
-        id: changes
+      # Extract list of changed files
+      - name: Extract changed files
         run: |
-          if git diff --quiet; then
+          grep -E '^\+\+\+ b/' clang_format_output.txt | cut -d' ' -f2 > changed_files.txt
+
+      # Check if there are any changes
+      - name: Check for changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet $(cat changed_files.txt); then
             echo "No formatting changes required."
-            echo "changes_made=false" >> $GITHUB_ENV
+            echo "::set-output name=changes_made::false"
           else
             echo "Formatting changes required."
-            echo "changes_made=true" >> $GITHUB_ENV
+            echo "::set-output name=changes_made::true"
           fi
+        id: changes
 
-      # Debug event payload and environment variable
-      - name: Debug Event Payload
-        run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Pull Request merged: ${{ github.event.pull_request.merged }}"
-          echo "Changes made: ${{ env.changes_made }}"
-
-      # Amend last commit on PR merge
+      # Amend the last commit if the workflow is triggered by a PR merge
       - name: Amend last commit
-        if: github.event.pull_request.merged == true && env.changes_made == 'true'
+        if: github.event.pull_request.merged == true && steps.changes.outputs.changes_made == 'true'
         run: |
           git add .
           git commit --amend --no-edit
           git push --force
 
-      # Commit changes on workflow dispatch
+      # Commit changes as a new commit if manually triggered
       - name: Commit changes
-        if: github.event_name == 'workflow_dispatch' && env.changes_made == 'true'
+        if: github.event_name == 'workflow_dispatch' && steps.changes.outputs.changes_made == 'true'
         run: |
           git add .
           git commit -m "Apply clang-format changes"
           git push
+
+      # Use clang-format output
+      - name: Use clang-format output
+        run: cat clang_format_output.txt
