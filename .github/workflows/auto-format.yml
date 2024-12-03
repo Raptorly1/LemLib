@@ -1,36 +1,52 @@
-name: Auto Format
+name: Code Formatting
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-  workflow_dispatch:
+    types: [closed] # Trigger when a PR is merged
+  workflow_dispatch: # Allow manual dispatch of the workflow
 
 jobs:
-  format:
+  format-code:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      # Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Run clang-format
-      id: clang-format
-      uses: DoozyX/clang-format-lint-action@v0.18
-      with:
-        source: './src/lemlib ./include/lemlib'
-        extensions: 'hpp,cpp'
-        clangFormatVersion: 18
+      # Run clang-format using DoozyX
+      - name: Run clang-format
+        uses: DoozyX/clang-format-lint-action@v0.18
+        with:
+          source: './src/lemlib ./include/lemlib'
+          extensions: 'hpp,cpp'
+          clangFormatVersion: 18
 
-    - name: Check for changes
-      id: check_changes
-      run: |
-        git diff --exit-code || echo "changes=true" >> $GITHUB_ENV
+      # Check if there are any changes
+      - name: Check for changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No formatting changes required."
+            echo "::set-output name=changes_made::false"
+          else
+            echo "Formatting changes required."
+            echo "::set-output name=changes_made::true"
+          fi
+        id: changes
 
-    - name: Commit changes
-      if: env.changes == 'true'
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add .
-        git commit -m "Auto-format code using clang-format-18"
-        git push
+      # Amend the last commit if the workflow is triggered by a PR merge
+      - name: Amend last commit
+        if: github.event.pull_request.merged == true && steps.changes.outputs.changes_made == 'true'
+        run: |
+          git add .
+          git commit --amend --no-edit
+          git push --force
+
+      # Commit changes as a new commit if manually triggered
+      - name: Commit changes
+        if: github.event_name == 'workflow_dispatch' && steps.changes.outputs.changes_made == 'true'
+        run: |
+          git add .
+          git commit -m "Apply clang-format changes"
+          git push
